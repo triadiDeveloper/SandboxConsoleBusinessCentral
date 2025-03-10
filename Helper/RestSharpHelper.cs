@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using RestSharp;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
 
 public class RestSharpHelper
 {
@@ -52,7 +50,7 @@ public class RestSharpHelper
         }
     }
 
-    public async Task<List<dynamic>> GetDataAsync(string urlBase, int pageSize)
+    public async Task<List<T>> GetDataAsync<T>(string urlBase, int pageSize)
     {
         var accessToken = await GetAccessTokenAsync();
         var client = new RestClient(urlBase);
@@ -78,7 +76,7 @@ public class RestSharpHelper
 
         Console.WriteLine($"Total records to Get: {totalRecordsToGet}");
 
-        var allData = new List<dynamic>();
+        var allData = new List<T>();
 
         var tasks = new List<Task<RestResponse>>();
 
@@ -102,10 +100,10 @@ public class RestSharpHelper
                 throw new Exception($"Error Get data: {response.StatusCode} - {response.ErrorMessage}");
             }
 
-            var pageData = JsonConvert.DeserializeObject<dynamic>(response.Content ?? "{}");
-            if (pageData?.value != null)
+            var pageData = JsonConvert.DeserializeObject<ODataResponse<T>>(response.Content ?? "{}");
+            if (pageData?.Value != null)
             {
-                allData.AddRange(pageData.value);
+                allData.AddRange(pageData.Value);
             }
         }
 
@@ -120,5 +118,11 @@ public class RestSharpHelper
     {
         [JsonProperty("@odata.count")]
         public int ODataCount { get; set; }
+    }
+
+    private class ODataResponse<T>
+    {
+        [JsonProperty("value")]
+        public List<T> Value { get; set; } = new List<T>();
     }
 }
